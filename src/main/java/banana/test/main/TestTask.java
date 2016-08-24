@@ -2,6 +2,7 @@ package banana.test.main;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 
 import org.apache.commons.cli.CommandLine;
@@ -58,6 +59,10 @@ public class TestTask {
 		startTestDownloader();
 		System.out.println("To begin testing");
 		task.thread = 1;
+		if (task.queue == null){
+			task.queue = new HashMap<String, Object>();
+		}
+		task.queue.put("delay", 1000);
 		crawlerMasterServer.submitTask(task);
 		while(true){
 			if (crawlerMasterServer.existTask(task.name).get()){
