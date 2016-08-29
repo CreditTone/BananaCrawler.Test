@@ -51,6 +51,7 @@ public class TestTask {
 		options.addOption("e", "extractor", true, "Set the extractor host");
 		options.addOption("t", "test", true, "Test task from a jsonfile");
 		options.addOption("p", "processor", true, "Test the target processor");
+		options.addOption("v", "v", false, "print detail info");
 		CommandLine commandLine = parser.parse(options, args);
 		if (!commandLine.hasOption("e") || !commandLine.hasOption("t")) {
 			System.out.println("Must have extractor configuration");
@@ -60,7 +61,6 @@ public class TestTask {
 		}
 		String taskFilePath = commandLine.getOptionValue('t');
 		Task task = initOneTask(taskFilePath);
-		task.verify();
 		String extractorAddress = commandLine.getOptionValue("e");
 		if (commandLine.hasOption("p")){
 			String[] split = commandLine.getOptionValue('p').split(",");
@@ -76,8 +76,9 @@ public class TestTask {
 			}
 			Extractor extractor = new JsonRpcExtractor(extractorAddress);
 			JSONConfigPageProcessor pro = new JSONConfigPageProcessor(taskid, processor, extractor);
-			testProcessor(pro, url);
+			testProcessor(pro, url,commandLine.hasOption("v"));
 		}else{
+			task.verify();
 			TestTask.start(task, extractorAddress);
 		}
 	}
@@ -135,7 +136,7 @@ public class TestTask {
 		}
 	}
 	
-	private static void testProcessor(PageProcessor pro,String url) throws Exception{
+	private static void testProcessor(PageProcessor pro,String url,boolean detail) throws Exception{
 		StartContext startContext = new StartContext();
 		DefaultPageDownloader downloader = new DefaultPageDownloader();
 		downloader.open();
@@ -144,12 +145,18 @@ public class TestTask {
 		List<CrawlData> objectContainer = new ArrayList<CrawlData>();
 		pro.process(page, startContext, queue, objectContainer);
 		System.out.println("extract request:" + queue.size());
-		for (HttpRequest request : queue) {
-			System.out.println(request.getUrl());
+		if (detail){
+			for (HttpRequest request : queue) {
+				System.out.print(request.getUrl());
+				System.out.print(" attr");
+				System.out.println(request.getAttributes());
+			}
 		}
 		System.out.println("extract crawler_data:" + objectContainer.size());
-		for (CrawlData data : objectContainer) {
-			System.out.println(data.getData().toMap());
+		if (detail){
+			for (CrawlData data : objectContainer) {
+				System.out.println(data.getData().toMap());
+			}
 		}
 		downloader.close();
 	}
