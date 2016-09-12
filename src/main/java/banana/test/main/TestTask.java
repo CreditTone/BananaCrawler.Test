@@ -2,7 +2,6 @@ package banana.test.main;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -25,12 +24,13 @@ import com.alibaba.fastjson.JSON;
 import banana.core.download.impl.DefaultPageDownloader;
 import banana.core.modle.CrawlData;
 import banana.core.processor.DataProcessor;
+import banana.core.processor.Extractor;
 import banana.core.processor.PageProcessor;
 import banana.core.protocol.CrawlerMasterProtocol;
 import banana.core.protocol.DownloadProtocol;
-import banana.core.protocol.Extractor;
 import banana.core.protocol.Task;
 import banana.core.request.HttpRequest;
+import banana.core.request.RequestBuilder;
 import banana.core.request.StartContext;
 import banana.core.response.Page;
 import banana.crawler.dowload.impl.DownloadServer;
@@ -69,13 +69,14 @@ public class TestTask {
 			String taskid = task.name + "_" + new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new Date());
 			Task.Processor processor = null;
 			for (Task.Processor p : task.processors) {
-				if(p.getIndex().equals(processorIndex)){
+				if(p.index.equals(processorIndex)){
 					processor = p;
 					break;
 				}
 			}
 			Extractor extractor = new JsonRpcExtractor(extractorAddress);
-			JSONConfigPageProcessor pro = new JSONConfigPageProcessor(taskid, processor, extractor);
+			JSONConfigPageProcessor pro = new JSONConfigPageProcessor(taskid, processor);
+			JSONConfigPageProcessor.MODE = JSONConfigPageProcessor.TEST_MODE;
 			testProcessor(pro, url,commandLine.hasOption("v"));
 		}else{
 			task.verify();
@@ -109,8 +110,10 @@ public class TestTask {
 		downloadServer.dataProcessor = new DataProcessor() {
 
 			public void process(List<CrawlData> objectContainer, String... args) throws Exception {
-				for (CrawlData data : objectContainer) {
-					System.out.println(data.getData().toMap());
+				if (objectContainer != null){
+					for (CrawlData data : objectContainer) {
+						System.out.println(data.getData().toMap());
+					}
 				}
 			}
 		};
@@ -140,7 +143,7 @@ public class TestTask {
 		StartContext startContext = new StartContext();
 		DefaultPageDownloader downloader = new DefaultPageDownloader();
 		downloader.open();
-		Page page = downloader.go(startContext.createPageRequest(url, ""));
+		Page page = downloader.go(RequestBuilder.createPageRequest(url, ""));
 		List<HttpRequest> queue = new ArrayList<HttpRequest>();
 		List<CrawlData> objectContainer = new ArrayList<CrawlData>();
 		pro.process(page, startContext, queue, objectContainer);
@@ -152,7 +155,7 @@ public class TestTask {
 				System.out.println(request.getAttributes());
 			}
 		}
-		System.out.println("extract crawler_data:" + objectContainer.size());
+		System.out.println("extract modle:" + objectContainer.size());
 		if (detail){
 			for (CrawlData data : objectContainer) {
 				System.out.println(data.getData().toMap());
